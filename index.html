@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DrawMessageJS</title>
+</head>
+
+<body>
+  <header>
+    <h1>DrawJS</h1>
+  </header>
+
+  <div class="container">
+    <div class="colorbox">
+      <div class="color color1 active" data-color="1"></div>
+      <div class="color color2" data-color="2"></div>
+      <div class="color color3" data-color="3"></div>
+      <div class="color color4" data-color="4"></div>
+    </div>
+
+    <div class="drawbox">
+      <canvas id="draw-canvas"></canvas>
+    </div>
+
+    <div class="toolbox">
+
+    </div>
+  </div>
+
+  <footer>
+
+  </footer>
+
+  <script>
+    const canvas = document.querySelector('#draw-canvas')
+    const container = document.querySelector(".container");
+    const colorsTools = document.querySelectorAll('.color');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = '850';
+    canvas.height = '500';
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 10;
+    ctx.shadowBlur = 10;
+
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    const drawList = [];
+
+    colors = ['#cb3594', '#659b41', '#ffcf33', '#4c78e8']
+    let colorActive = colors[0];
+
+    function draw(e) {
+      if (!isDrawing) return;
+      ctx.strokeStyle = colorActive;
+      ctx.shadowColor = ctx.strokeStyle;
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+      [lastX, lastY] = [e.offsetX, e.offsetY];
+      addToList(lastX, lastY, colorActive);
+    }
+
+    function colorClick(e) {
+      colorActive = colors[this.dataset.color - 1];
+
+      colorsTools.forEach(color => {
+        color.classList.remove('active');
+      });
+
+      this.classList.add('active');
+    }
+
+    function addToList(x, y, color) {
+      const item = {
+        x,
+        y,
+        color
+      }
+
+      drawList.push(item)
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      isDrawing = true;
+      [lastX, lastY] = [e.offsetX, e.offsetY];
+    });
+
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', () => isDrawing = false);
+    canvas.addEventListener('mouseout', () => isDrawing = false);
+
+    colorsTools.forEach(color => color.addEventListener('click', colorClick))
+  </script>
+
+  <style>
+    body {
+      background-color: #2b414d;
+    }
+
+    header {
+      text-align: center;
+      color: #fff;
+    }
+
+    .container {
+      display: flex;
+      margin: 0 50px;
+      height: 500px;
+      background-color: #efc75e;
+    }
+
+    .colorbox {
+      flex: 1;
+      border: 1px dotted red;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .color {
+      /* border: 1px dotted blue; */
+      width: 50px;
+      height: 50px;
+      margin-bottom: 15px;
+      border-radius: 50%;
+      transition: all .07s ease;
+    }
+
+    .color1 {
+      background-color: #cb3594;
+    }
+
+    .color2 {
+      background-color: #659b41;
+    }
+
+    .color3 {
+      background-color: #ffcf33;
+    }
+
+    .color4 {
+      background-color: #4c78e8;
+    }
+
+    .color:hover {
+      transform: scale(1.3);
+    }
+
+    .active {
+      border: 4px solid teal;
+      border-radius: 50%;
+      /* transform: scale(1.1); */
+    }
+
+    .drawbox {
+      flex: 8;
+      border: 1px dotted red;
+      background-color: #000;
+    }
+
+    .toolbox {
+      flex: 2;
+      border: 1px dotted red;
+    }
+  </style>
+</body>
+
+</html>
