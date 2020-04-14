@@ -8,9 +8,9 @@
 </head>
 
 <body>
-  <header>
+  <!-- <header>
     <h1>DrawMessageJS</h1>
-  </header>
+  </header> -->
 
   <div class="container">
     <div class="colorbox">
@@ -21,6 +21,9 @@
     </div>
 
     <div class="drawbox">
+      <div class="progress">
+        <div class="progress-filled"></div>
+      </div>
       <canvas id="draw-canvas"></canvas>
     </div>
 
@@ -34,158 +37,6 @@
     <input id="message-url"></input>
   </footer>
 
-  <!-- The core Firebase JS SDK is always required and must be listed first -->
-  <script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-app.js"></script>
-
-  <!-- TODO: Add SDKs for Firebase products that you want to use
-         https://firebase.google.com/docs/web/setup#available-libraries -->
-
-  <!-- Initialize Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-firestore.js"></script>
-
-  <script>
-
-    // Your web app's Firebase configuration
-    var firebaseConfig = {
-
-    };
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-
-    const db = firebase.firestore();
-
-    const messages = db.collection('messages');
-
-    const canvas = document.querySelector('#draw-canvas')
-    const container = document.querySelector(".container");
-    const colorsTools = document.querySelectorAll('.color');
-    const buttonSend = document.querySelector('.button-send');
-    const messageURL = document.querySelector('#message-url');
-    const ctx = canvas.getContext('2d');
-
-    canvas.width = '850';
-    canvas.height = '500';
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-    ctx.lineWidth = 10;
-    ctx.shadowBlur = 10;
-
-    let isDrawing = false;
-    let lastX = 0;
-    let lastY = 0;
-    const drawList = [];
-
-    colors = ['#cb3594', '#659b41', '#ffcf33', '#4c78e8']
-    let colorActive = colors[0];
-
-    function update(e) {
-      addToList(lastX, lastY, colorActive, isDrawing);
-      draw(e.offsetX, e.offsetY, colorActive, isDrawing)
-    }
-
-    function draw(x, y, color, drawing) {
-      if (!drawing) return;
-      ctx.strokeStyle = color;
-      ctx.shadowColor = ctx.strokeStyle;
-      ctx.beginPath();
-      ctx.moveTo(lastX, lastY);
-      ctx.lineTo(x, y);
-      ctx.stroke();
-      [lastX, lastY] = [x, y];
-    }
-
-    function colorClick(e) {
-      colorActive = colors[this.dataset.color - 1];
-
-      colorsTools.forEach(color => {
-        color.classList.remove('active');
-      });
-
-      this.classList.add('active');
-    }
-
-    function addToList(x, y, color, isDrawing) {
-      const item = {
-        x,
-        y,
-        color,
-        isDrawing
-      }
-
-      drawList.push(item)
-    }
-
-    function saveMessage() {
-      messages.add({
-        message: drawList,
-        width: 20,
-        height: 30
-      }).then(result => {
-        console.log(result.id);
-
-        messageURL.value = `http://localhost:8000/public/?message=${result.id}`;
-        messageURL.select();
-        document.execCommand('copy');
-      })
-    }
-
-    canvas.addEventListener('mousedown', (e) => {
-      isDrawing = true;
-      [lastX, lastY] = [e.offsetX, e.offsetY];
-    });
-
-    canvas.addEventListener('mousemove', update);
-    canvas.addEventListener('mouseup', () => isDrawing = false);
-    canvas.addEventListener('mouseout', () => isDrawing = false);
-    buttonSend.addEventListener('click', saveMessage)
-
-    colorsTools.forEach(color => color.addEventListener('click', colorClick))
-
-    const queryString = window.location.search;
-    console.log(queryString);
-    const urlParams = new URLSearchParams(queryString);
-    const messageId = urlParams.get('message');
-
-    if (messageId) {
-      messages.doc(messageId).get()
-        .then(result => {
-          const data = result.data();
-
-          console.log(data.message);
-
-
-          // isDrawing = true;
-
-          let drawing = false;
-
-          data.message.forEach((item, i) => {
-            setTimeout(() => {
-              if (!drawing && item.isDrawing) {
-                [lastX, lastY] = [item.x, item.y]
-                drawing = true;
-              }
-
-              if (drawing && !item.isDrawing) {
-                drawing = false;
-              }
-
-              draw(item.x, item.y, item.color, item.isDrawing);
-
-
-
-            }, 15 * i
-
-            )
-          })
-
-          // isDrawing = false;
-
-        })
-
-    }
-
-  </script>
-
   <style>
     body {
       background-color: #2b414d;
@@ -198,14 +49,14 @@
 
     .container {
       display: flex;
-      margin: 0 50px;
+      /* margin: 0 50px; */
+      width: 100%;
       height: 500px;
       background-color: #efc75e;
     }
 
     .colorbox {
       flex: 1;
-      border: 1px dotted red;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -213,7 +64,6 @@
     }
 
     .color {
-      /* border: 1px dotted blue; */
       width: 50px;
       height: 50px;
       margin-bottom: 15px;
@@ -248,13 +98,11 @@
 
     .drawbox {
       flex: 8;
-      border: 1px dotted red;
       background-color: #000;
     }
 
     .toolbox {
       flex: 2;
-      border: 1px dotted red;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
@@ -278,8 +126,228 @@
     footer input {
       flex: 1;
     }
+
+    .progress {
+      flex: 10;
+      position: relative;
+      display: flex;
+      flex-basis: 100%;
+      height: 5px;
+      transition: height 0.3s;
+      background: rgba(0, 0, 0, 0.5);
+      cursor: ew-resize;
+    }
+
+    .progress-filled {
+      width: 50%;
+      background: #f76a8c;
+      flex: 0;
+      flex-basis: 0;
+    }
+
+    @media only screen and (max-width: 600px) {
+      body {
+        margin: 0;
+      }
+
+      .container {
+        flex-direction: column;
+        height: 600px;
+        width: 100%;
+      }
+
+      .toolbox {
+        flex-direction: column;
+      }
+
+      .colorbox {
+        flex-direction: row;
+        justify-content: space-around;
+      }
+
+      .color {
+        width: 30px;
+        height: 30px;
+        margin: 5px;
+      }
+
+    }
   </style>
 
+  <!-- The core Firebase JS SDK is always required and must be listed first -->
+  <script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-app.js"></script>
+
+  <!-- TODO: Add SDKs for Firebase products that you want to use
+         https://firebase.google.com/docs/web/setup#available-libraries -->
+
+  <!-- Initialize Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/6.2.0/firebase-firestore.js"></script>
+
+  <script>
+
+    // Your web app's Firebase configuration
+    var firebaseConfig = {
+      apiKey: "AIzaSyDWcqlh0SsOodP5kOkG44Irh7066y-DWZo",
+      authDomain: "drawmessage-96377.firebaseapp.com",
+      databaseURL: "https://drawmessage-96377.firebaseio.com",
+      projectId: "drawmessage-96377",
+      storageBucket: "drawmessage-96377.appspot.com",
+      messagingSenderId: "895862821669",
+      appId: "1:895862821669:web:afbae17ae7fdf91ff9c0cc"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const messages = db.collection('messages');
+
+    const canvas = document.querySelector('#draw-canvas')
+    const container = document.querySelector(".container");
+    const drawBox = document.querySelector('.drawbox')
+    const colorsTools = document.querySelectorAll('.color');
+    const buttonSend = document.querySelector('.button-send');
+    const messageURL = document.querySelector('#message-url');
+    const progressBar = document.querySelector('.progress-filled');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = drawBox.offsetWidth;
+    canvas.height = drawBox.offsetHeight;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 10;
+    ctx.shadowBlur = 10;
+
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    const drawList = [];
+
+    colors = ['#cb3594', '#659b41', '#ffcf33', '#4c78e8']
+    let colorActive = colors[0];
+
+    function update(e) {
+      addToList(lastX, lastY, colorActive, isDrawing);
+      draw(e.offsetX, e.offsetY, colorActive, isDrawing)
+    }
+
+    function updateTouch(e) {
+      const touch = e.touches[0];
+
+      addToList(lastX, lastY, colorActive, isDrawing);
+      draw(touch.clientX, touch.clientY, colorActive, isDrawing)
+    }
+
+    function draw(x, y, color, drawing, scaleX = 1, scaleY = 1) {
+      if (!drawing) return;
+      ctx.strokeStyle = color;
+      ctx.shadowColor = ctx.strokeStyle;
+      ctx.beginPath();
+      ctx.moveTo(lastX * scaleX, lastY * scaleY);
+      ctx.lineTo(x * scaleX, y * scaleY);
+      ctx.stroke();
+      [lastX, lastY] = [x, y];
+    }
+
+    function colorClick(e) {
+      colorActive = colors[this.dataset.color - 1];
+
+      colorsTools.forEach(color => {
+        color.classList.remove('active');
+      });
+
+      this.classList.add('active');
+    }
+
+    function addToList(x, y, color, isDrawing) {
+      const item = {
+        x,
+        y,
+        color,
+        isDrawing
+      }
+
+      drawList.push(item)
+    }
+
+    function saveMessage() {
+      messages.add({
+        message: drawList,
+        width: canvas.width,
+        height: canvas.height
+      }).then(result => {
+        console.log(result.id);
+
+        const protocol = window.location.protocol;
+        const host = window.location.host;
+        const path = window.location.pathname;
+
+        messageURL.value = new URL(`${protocol}//${host}/${path}?message=${result.id}`).toString();
+        messageURL.select();
+        document.execCommand('copy');
+      })
+    }
+
+    function drawMessageReceived(messageId) {
+      if (messageId) {
+
+        messages.doc(messageId).get()
+          .then(result => {
+            const data = result.data();
+
+            const scaleX = (canvas.width / data.width);
+            const scaleY = (canvas.height / data.height);
+
+            let drawing = false;
+
+            data.message.forEach((item, i) => {
+              setTimeout(() => {
+                const percents = (i / data.message.length) * 100;
+                progressBar.style.flexBasis = `${percents}%`;
+
+                if (!drawing && item.isDrawing) {
+                  [lastX, lastY] = [item.x, item.y]
+                  drawing = true;
+                }
+
+                if (drawing && !item.isDrawing) {
+                  drawing = false;
+                }
+
+                draw(item.x, item.y, item.color, item.isDrawing, scaleX, scaleY);
+
+              }, 20 * i)
+            })
+          })
+
+      }
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      isDrawing = true;
+      [lastX, lastY] = [e.offsetX, e.offsetY];
+    });
+    canvas.addEventListener('mousemove', update);
+    canvas.addEventListener('mouseup', () => isDrawing = false);
+    canvas.addEventListener('mouseout', () => isDrawing = false);
+
+    // canvas.addEventListener('touchstart', (e) => {
+    //   isDrawing = true;
+    //   const touch = e.touches[0];
+    //   [lastX, lastY] = [touch.clientX, touch.clientY];
+    // });
+    // canvas.addEventListener('touchmove', updateTouch);
+    // canvas.addEventListener('touchend', () => isDrawing = false);
+    // canvas.addEventListener('touchcancel', () => isDrawing = false);
+
+    buttonSend.addEventListener('click', saveMessage)
+    colorsTools.forEach(color => color.addEventListener('click', colorClick))
+
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const messageId = urlParams.get('message');
+
+    drawMessageReceived(messageId);
+
+  </script>
 
 </body>
 
