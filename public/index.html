@@ -8,11 +8,9 @@
 </head>
 
 <body>
-  <!-- <header>
-    <h1>DrawMessageJS</h1>
-  </header> -->
 
   <div class="container">
+
     <div class="colorbox">
       <div class="color color1 active" data-color="1"></div>
       <div class="color color2" data-color="2"></div>
@@ -29,11 +27,14 @@
 
     <div class="toolbox">
       <button class="button-send">Enviar</button>
-
+      <div class="toastbox" hidden>
+        <p>URL copied</p>
+      </div>
     </div>
   </div>
 
   <footer>
+    <label>URL:</label>
     <input id="message-url"></input>
   </footer>
 
@@ -120,11 +121,17 @@
 
     footer {
       display: flex;
-      margin: 10px 50px;
+      margin: 10px 0;
+      flex-direction: column;
+    }
+
+    footer label {
+      color: #fff;
     }
 
     footer input {
       flex: 1;
+      font-size: 15px;
     }
 
     .progress {
@@ -143,6 +150,24 @@
       background: #f76a8c;
       flex: 0;
       flex-basis: 0;
+    }
+
+    .toastbox {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      transition: opacity 2s ease;
+      opacity: 0;
+    }
+
+    .toastbox p {
+      background-color: #f76a8c;
+      padding: 10px;
+    }
+
+    .toast-sent {
+      opacity: 1;
     }
 
     @media only screen and (max-width: 600px) {
@@ -187,7 +212,13 @@
 
     // Your web app's Firebase configuration
     var firebaseConfig = {
-
+      apiKey: "AIzaSyDWcqlh0SsOodP5kOkG44Irh7066y-DWZo",
+      authDomain: "drawmessage-96377.firebaseapp.com",
+      databaseURL: "https://drawmessage-96377.firebaseio.com",
+      projectId: "drawmessage-96377",
+      storageBucket: "drawmessage-96377.appspot.com",
+      messagingSenderId: "895862821669",
+      appId: "1:895862821669:web:afbae17ae7fdf91ff9c0cc"
     };
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
@@ -201,6 +232,7 @@
     const buttonSend = document.querySelector('.button-send');
     const messageURL = document.querySelector('#message-url');
     const progressBar = document.querySelector('.progress-filled');
+    const toastBox = document.querySelector('.toastbox');
     const ctx = canvas.getContext('2d');
 
     canvas.width = drawBox.offsetWidth;
@@ -213,18 +245,23 @@
     let isDrawing = false;
     let lastX = 0;
     let lastY = 0;
-    const drawList = [];
+    let drawList = [];
+    let viewing = false;
 
     colors = ['#cb3594', '#659b41', '#ffcf33', '#4c78e8']
     let colorActive = colors[0];
 
     function update(e) {
+      if (viewing) return;
+
       addToList(lastX, lastY, colorActive, isDrawing);
       draw(e.offsetX, e.offsetY, colorActive, isDrawing)
     }
 
     function updateTouch(e) {
       e.preventDefault();
+      if (viewing) return;
+
       const touch = e.touches[0];
 
       addToList(lastX, lastY, colorActive, isDrawing);
@@ -264,12 +301,23 @@
     }
 
     function saveMessage() {
+      if (buttonSend.innerHTML === 'Sending...') return;
+
+      if (viewing) {
+        viewing = false;
+        buttonSend.innerHTML = 'Send'
+        clear();
+        return;
+      }
+
+      buttonSend.innerHTML = 'Sending...'
+
       messages.add({
         message: drawList,
         width: canvas.width,
         height: canvas.height
       }).then(result => {
-        console.log(result.id);
+        buttonSend.innerHTML = 'Send'
 
         const protocol = window.location.protocol;
         const host = window.location.host;
@@ -278,11 +326,28 @@
         messageURL.value = new URL(`${protocol}//${host}/${path}?message=${result.id}`).toString();
         messageURL.select();
         document.execCommand('copy');
+        showToastBox();
       })
+    }
+
+    function clear() {
+      drawList = [];
+      progressBar.style.flexBasis = '0%';
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
+
+    function showToastBox() {
+      toastBox.classList.add('toast-sent')
+
+      setTimeout(() => {
+        toastBox.classList.remove('toast-sent')
+      }, 2000);
     }
 
     function drawMessageReceived(messageId) {
       if (messageId) {
+        viewing = true;
+        buttonSend.innerHTML = 'New message'
 
         messages.doc(messageId).get()
           .then(result => {
@@ -317,6 +382,7 @@
     }
 
     canvas.addEventListener('mousedown', (e) => {
+      if (viewing) return;
       isDrawing = true;
       [lastX, lastY] = [e.offsetX, e.offsetY];
     });
@@ -326,6 +392,8 @@
 
     canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
+      if (viewing) return;
+
       isDrawing = true;
       const touch = e.touches[0];
       [lastX, lastY] = [touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop];
