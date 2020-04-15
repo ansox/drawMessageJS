@@ -187,13 +187,7 @@
 
     // Your web app's Firebase configuration
     var firebaseConfig = {
-      apiKey: "AIzaSyDWcqlh0SsOodP5kOkG44Irh7066y-DWZo",
-      authDomain: "drawmessage-96377.firebaseapp.com",
-      databaseURL: "https://drawmessage-96377.firebaseio.com",
-      projectId: "drawmessage-96377",
-      storageBucket: "drawmessage-96377.appspot.com",
-      messagingSenderId: "895862821669",
-      appId: "1:895862821669:web:afbae17ae7fdf91ff9c0cc"
+
     };
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
@@ -230,10 +224,11 @@
     }
 
     function updateTouch(e) {
+      e.preventDefault();
       const touch = e.touches[0];
 
       addToList(lastX, lastY, colorActive, isDrawing);
-      draw(touch.clientX, touch.clientY, colorActive, isDrawing)
+      draw(touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop, colorActive, isDrawing)
     }
 
     function draw(x, y, color, drawing, scaleX = 1, scaleY = 1) {
@@ -329,14 +324,16 @@
     canvas.addEventListener('mouseup', () => isDrawing = false);
     canvas.addEventListener('mouseout', () => isDrawing = false);
 
-    // canvas.addEventListener('touchstart', (e) => {
-    //   isDrawing = true;
-    //   const touch = e.touches[0];
-    //   [lastX, lastY] = [touch.clientX, touch.clientY];
-    // });
-    // canvas.addEventListener('touchmove', updateTouch);
-    // canvas.addEventListener('touchend', () => isDrawing = false);
-    // canvas.addEventListener('touchcancel', () => isDrawing = false);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      isDrawing = true;
+      const touch = e.touches[0];
+      [lastX, lastY] = [touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop];
+      addToList(lastX, lastY, colorActive, false);
+    });
+    canvas.addEventListener('touchmove', updateTouch);
+    canvas.addEventListener('touchend', () => isDrawing = false);
+    canvas.addEventListener('touchcancel', () => isDrawing = false);
 
     buttonSend.addEventListener('click', saveMessage)
     colorsTools.forEach(color => color.addEventListener('click', colorClick))
