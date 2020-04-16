@@ -26,7 +26,8 @@
     </div>
 
     <div class="toolbox">
-      <button class="button-send">Enviar</button>
+      <button class="button button-send">Send</button>
+      <button class="button button-clear">Clear</button>
       <div class="toastbox" hidden>
         <p>URL copied</p>
       </div>
@@ -110,7 +111,7 @@
 
     }
 
-    .button-send {
+    .button {
       border: 0;
       font-size: 15px;
       padding: 10px;
@@ -230,6 +231,7 @@
     const drawBox = document.querySelector('.drawbox')
     const colorsTools = document.querySelectorAll('.color');
     const buttonSend = document.querySelector('.button-send');
+    const buttonClear = document.querySelector('.button-clear');
     const messageURL = document.querySelector('#message-url');
     const progressBar = document.querySelector('.progress-filled');
     const toastBox = document.querySelector('.toastbox');
@@ -305,19 +307,25 @@
 
       if (viewing) {
         viewing = false;
-        buttonSend.innerHTML = 'Send'
+        buttonSend.innerHTML = 'Send';
+        buttonClear.disabled = false;
+        buttonClear.style.opacity = 1;
         clear();
         return;
       }
 
       buttonSend.innerHTML = 'Sending...'
+      buttonClear.disabled = true;
+      buttonClear.style.opacity = 0;
 
       messages.add({
         message: drawList,
         width: canvas.width,
         height: canvas.height
       }).then(result => {
-        buttonSend.innerHTML = 'Send'
+        buttonSend.innerHTML = 'New message';
+
+        viewing = true;
 
         const protocol = window.location.protocol;
         const host = window.location.host;
@@ -347,7 +355,9 @@
     function drawMessageReceived(messageId) {
       if (messageId) {
         viewing = true;
-        buttonSend.innerHTML = 'New message'
+        buttonSend.innerHTML = 'New message';
+        buttonClear.disabled = true;
+        buttonClear.style.opacity = 0;
 
         messages.doc(messageId).get()
           .then(result => {
@@ -403,7 +413,8 @@
     canvas.addEventListener('touchend', () => isDrawing = false);
     canvas.addEventListener('touchcancel', () => isDrawing = false);
 
-    buttonSend.addEventListener('click', saveMessage)
+    buttonSend.addEventListener('click', saveMessage);
+    buttonClear.addEventListener('click', clear)
     colorsTools.forEach(color => color.addEventListener('click', colorClick))
 
     const queryString = window.location.search;
